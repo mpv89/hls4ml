@@ -711,6 +711,22 @@ class Input(Layer):
     def config_cpp(self):
         return None
 
+class Identity(Layer):
+    def initialize(self):
+        shape = self.attributes['shape']
+        if shape[0] is None:
+            shape = shape[1:]
+        dims = ['N_IDENTITY_{}_{}'.format(i, self.index) for i in range(1, len(shape) + 1)]
+        self.add_output_variable(shape, dims)
+
+    def function_cpp(self):
+        params = self._default_function_params()
+        params['size'] = self.get_output_variable().dim_names[0]
+        return [self._function_template.format(**params)]
+
+    def config_cpp(self):
+        return None
+
 class Reshape(Layer):
     def initialize(self):
         shape = self.attributes['target_shape']
@@ -1140,6 +1156,7 @@ class Transpose(Layer):
 
 layer_map = {
     'InputLayer'         : Input,
+    'Identity'           : Identity,
     'Activation'         : Activation,
     'QActivation'        : Activation,
     'LeakyReLU'          : ParametrizedActivation,

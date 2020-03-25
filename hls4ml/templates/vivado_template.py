@@ -147,6 +147,7 @@ transpose_config_template = """struct config{index} : nnet::transpose_config {{
     static const unsigned perm[3] = {{{perm_str}}};
 }};\n"""
 
+identity_function_template = 'for (size_t i = 0; i < {size}; i++) {output}[i] = {input}[i];'
 dense_function_template = 'nnet::dense_{strategy}<{input_t}, {output_t}, {config}>({input}, {output}, {w}, {b});'
 batchnorm_function_template = 'nnet::normalize<{input_t}, {output_t}, {config}>({input}, {output}, {scale}, {bias});'
 conv1d_function_template = 'nnet::conv_1d_{strategy}_{data_format}<{input_t}, {output_t}, {config}>({input}, {output}, {w}, {b});'
@@ -162,7 +163,8 @@ transpose_function_template = 'nnet::transpose{dim}<{input_t}, {config}>({input}
 class VivadoBackend(Backend):
     def __init__(self):
         super(VivadoBackend, self).__init__('Vivado')
-        self.register_templates('Dense', dense_function_template, dense_config_template)
+        self.register_templates('Identity'               , identity_function_template,    None)
+        self.register_templates('Dense'                  , dense_function_template,       dense_config_template)
         self.register_templates('BinaryDense'            , dense_function_template,       dense_config_template)
         self.register_templates('BatchNormalization'     , batchnorm_function_template,   batchnorm_config_template)
         self.register_templates('Conv1D'                 , conv1d_function_template,      [conv1d_config_template, conv_mult_config_template])

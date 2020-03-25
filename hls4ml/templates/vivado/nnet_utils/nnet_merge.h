@@ -53,6 +53,16 @@ void add(
     }
 }
 
+// TODO: Better way using typedef or using? using didn't work with hls. I don't think #define will work.
+template<class input1_T, class input2_T, class res_T, typename CONFIG_T>
+void addv2(
+    input1_T data1[CONFIG_T::n_elem],
+	input2_T data2[CONFIG_T::n_elem],
+    res_T res[CONFIG_T::n_elem])
+{
+    add<input1_T, input2_T, res_T, CONFIG_T>(data1, data2, res);
+}
+
 template<class input1_T, class input2_T, class res_T, typename CONFIG_T>
 void subtract(
     input1_T data1[CONFIG_T::n_elem],

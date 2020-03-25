@@ -155,7 +155,7 @@ def tf_to_hls(yamlConfig):
     array_ops = ['ConcatV2', 'StridedSlice', 'Transpose']
     core_ops = ['Const', 'Identity', 'Placeholder']
     image_ops = ['ResizeNearestNeighbor']
-    math_ops = ['Add', 'MatMul', 'Mul', 'Sigmoid']
+    math_ops = ['Add', 'AddV2', 'MatMul', 'Mul', 'Sigmoid']
     nn_ops = ['AvgPool', 'BiasAdd', 'Conv2D', 'Elu', 'FusedBatchNorm', 'MaxPool', 'Relu', 'Selu', 'Softmax']
     supported_ops = array_ops + core_ops + image_ops + math_ops + nn_ops
 
@@ -185,7 +185,24 @@ def tf_to_hls(yamlConfig):
                 input_layers.append(layer['name'])
                 handled = True
 
-        elif tf_op.type == 'Const' or tf_op.type == 'Identity':
+        elif tf_op.type == 'Identity':
+            # Hack/TODO: Some exported models have their outputs set as an Identity layer,
+            #            if this layer is ignored by TFDataReader then the parsing will
+            #            fail. This hack solves this problem but likely better solutions
+            #            exist.
+            output_name = _parse_tensor_names(tf_op.outputs[0])[0];
+            if output_name == 'Identity':
+                output_shape = tf_op.outputs[0].shape.as_list()
+                layer['class_name'] = 'Identity'
+                layer['shape'] = output_shape[1:]
+                layer['inputs'] = _parse_tensor_names(tf_op.inputs[0])
+                layer['outputs'] = _parse_tensor_names(tf_op.outputs[0])
+                handled = True
+            else:
+                handled = True
+                continue
+
+        elif tf_op.type == 'Const':
             # Nothing to do here, TFDataReader handles these
             handled = True
             continue
@@ -313,7 +330,7 @@ def tf_to_hls(yamlConfig):
 
             handled = True
 
-        elif tf_op.type in ['Add', 'Mul']:
+        elif tf_op.type in ['Add', 'AddV2', 'Mul']:
             layer['class_name'] = 'Merge'
             layer['inputs'] = _parse_tensor_names(list(tf_op.inputs))
             layer['outputs'] = _parse_tensor_names(tf_op.outputs[0])
